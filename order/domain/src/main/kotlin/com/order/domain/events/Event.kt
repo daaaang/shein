@@ -1,7 +1,8 @@
 package com.order.domain.events
 
-import com.order.domain.model.ProductItem
-import com.order.domain.model.ProductOrderBill
+import com.order.domain.model.OrderProduct
+import com.order.domain.model.KitchenOrderTicket
+import com.order.domain.model.Order
 
 sealed class Event(
     open val txId: String,
@@ -10,22 +11,17 @@ sealed class Event(
 data class OrderProductEvent(
     override val txId: String,
     val orderId: Long,
-    val productItems: List<ProductItem>,
+    val orderProducts: List<OrderProduct>,
 ) : Event(txId = txId)
 
 data class OrderKitchenEvent(
     override val txId: String,
     val orderId: Long,
-    val productItems: List<ProductItem>,
-) : Event(txId = txId) {
+    val orderProducts: List<OrderProduct>,
+) : Event(txId = txId)
 
-    companion object {
-        fun fromOrderProductBill(orderProductOrderBill: ProductOrderBill): OrderKitchenEvent {
-            return OrderKitchenEvent(
-                txId = orderProductOrderBill.txId,
-                orderId = orderProductOrderBill.orderId,
-                productItems = orderProductOrderBill.productItems,
-            )
-        }
-    }
-}
+data class OrderPaymentEvent(
+    override val txId: String,
+    val orderId: Long,
+
+) : Event(txId = txId)
