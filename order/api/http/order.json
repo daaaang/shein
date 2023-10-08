@@ -1,0 +1,13 @@
+{
+  "userId": 1234,
+  "orderProducts": [
+    {
+      "productId": 123,
+      "amount": 4
+    },
+    {
+      "productId": 124,
+      "amount": 5
+    }
+  ]
+}

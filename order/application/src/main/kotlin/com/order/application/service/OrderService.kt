@@ -1,0 +1,44 @@
+package com.order.application.service
+
+import com.order.domain.usecase.OrderUseCase
+import com.order.domain.events.OrderProductEvent
+import com.order.domain.events.handler.EventHandler
+import com.order.domain.model.Order
+import com.order.domain.model.OrderProduct
+import com.order.domain.model.OrderRequest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+@Service
+class OrderService(
+    private val eventHandler: EventHandler<OrderProductEvent>,
+    private val orderUseCase: OrderUseCase,
+    private val coroutineScope: CoroutineScope,
+) {
+
+    @Transactional
+    fun createOrder(orderRequest: OrderRequest) {
+        val savedOrder = orderUseCase.saveOrder(
+            order = Order.fromOrderRequest(orderRequest),
+        )
+
+        val saveOrderProduct = orderUseCase.saveOrderProduct(
+            orderProducts = OrderProduct(
+                orderId = savedOrder.id,
+                productItems = orderRequest.productItems,
+            )
+        )
+
+        val orderEvent = OrderProductEvent(
+            txId = savedOrder.txId,
+            orderId = savedOrder.id,
+            productItems = saveOrderProduct.productItems,
+        )
+
+        coroutineScope.launch {
+            eventHandler.handle(orderEvent)
+        }
+    }
+}
