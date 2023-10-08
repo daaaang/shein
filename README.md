@@ -1,27 +1,13 @@
-# 사가 패턴 실습 (코드 수정 중...)
+# 사가 패턴 실습 (개발 중!)
 
 ## 목표 구조도
-
-![img_4.png](img_4.png)
+![img.png](img.png)
 
 ## 개발 시나리오
 
 - 유저가 주문을 요청해요.
 
 ```json
-{
-  "userId": 1234,
-  "orderProducts": [
-    {
-      "productId": 123,
-      "amount": 4
-    },
-    {
-      "productId": 124,
-      "amount": 5
-    }
-  ]
-}
 ```
 
 - 주문 서비스는 유저의 주문 요청을 바탕으로 주문 도메인을 생성하고 저장해요
@@ -39,55 +25,39 @@
     )
 ```
 
-- 생성된 주문 정보를 바탕으로 주문 생성 이벤트를 생성해요.
+- 이벤트 발행기를 정의하고 주문 생성 - 소비자 검증 이벤트를 발행해요.
 
 ``` kotlin
-    val orderEvent = OrderProductEvent(
-        txId = savedOrder.txId,
-        orderId = savedOrder.id,
-        productItems = saveOrderProduct.productItems,
-    )
 ```
 
-- 이벤트 발행기를 정의하고 주문 생성 - 상품 재고 이벤트를 발행해요.
+- 주문 생성 유저 검증 이벤트를 수신하고, 주문을 취소하는 보상 트랜잭션이나 주방 티켓 발급 요청 이벤트를 발행해요.
 
 ``` kotlin
-    @Component
-    class OrderProductEventHandler(
-        private val eventPublisher: EventPublisher<EventMessage<OrderProductEvent>>,
-    ) : EventHandler<OrderProductEvent> {
-        override suspend fun handle(event: OrderProductEvent) {
-            eventPublisher.publish(
-                eventName = EventPublishName.ORDER_TO_PRODUCT_STOCK,
-                message = EventMessage(
-                    target = EventTarget.ORDER_CREATION,
-                    txId = event.txId,
-                    status = EventStatus.APPROVED,
-                    message = event,
-                )
-            )
-        }
-    }
-```
-
-- 주문 생성 관련한 이벤트를 컨슈머를 정의하고 이벤트를 소모해요.
-
-``` kotlin
-    @KafkaListener(topics = ["product-to-order-product-stock"], groupId = "saga")
-    override fun consumeProductStock(message: EventMessage<ProductOrderBill>) {
-
+    @KafkaListener(topics = ["user-to-order"], groupId = "saga")
+    override fun consumeUserStatus(message: EventMessage<UserStatus>) {
         coroutineScope.launch {
-            when(message.status) {
-                EventStatus.APPROVED -> eventDispatcher.dispatch(
-                    event = OrderKitchenEvent.fromOrderProductBill(message.message)
-                )
+            val userStatus = message.message
+            when (message.status) {
+                EventStatus.APPROVED -> {
+                    when (userStatus.userStatus) {
+                        UserStatusType.NOMAL -> {
+                            eventDispatcher.dispatch(
+                                event = orderKitchenUseCase.createOrderKitchenEvent(txId = message.txId)
+                            )
+                        }
+
+                        UserStatusType.ABNOMAL -> {
+                            TODO("주문 취소")
+                        }
+                    }
+                }
+
                 EventStatus.REJECTED -> eventDispatcher.dispatch(
-                    TODO("보상 트랜잭션")
+                    TODO("주문 취소")
                 )
             }
         }
     }
-
 ```
 
 - 이 단계에서 각 요청 상태에 따라 다음 스탭을 위한 이벤트 혹은, 보상 트랜잭션 등의 이벤트를 발행해요
