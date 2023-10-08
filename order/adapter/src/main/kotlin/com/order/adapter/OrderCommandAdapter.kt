@@ -6,8 +6,8 @@ import com.order.adapter.entity.OrderProductEntity
 import com.order.adapter.entity.OrderProductEntityRepository
 import com.order.domain.usecase.OrderUseCase
 import com.order.domain.model.Order
+import com.order.domain.model.OrderItems
 import com.order.domain.model.OrderProduct
-import com.order.domain.model.ProductItem
 import org.springframework.stereotype.Component
 
 @Component
@@ -21,8 +21,8 @@ class OrderCommandAdapter(
             .toDomainModel()
     }
 
-    override fun saveOrderProduct(orderProducts: OrderProduct): OrderProduct {
-        val orderProductsEntities = orderProductEntityRepository.saveAll(orderProducts.productItems.map {
+    override fun saveOrderProduct(orderProducts: OrderItems): OrderItems {
+        val orderProductsEntities = orderProductEntityRepository.saveAll(orderProducts.orderProducts.map {
             OrderProductEntity(
                 amount = it.amount,
                 productId = it.productId,
@@ -30,10 +30,10 @@ class OrderCommandAdapter(
             )
         })
 
-        return OrderProduct(
+        return OrderItems(
             orderId = orderProducts.orderId,
             orderProductsEntities.map {
-                ProductItem(
+                OrderProduct(
                     amount = it.amount,
                     productId = it.productId,
                 )

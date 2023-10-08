@@ -3,7 +3,7 @@ package com.order.api.orders
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.order.application.service.OrderService
 import com.order.application.service.TestService
-import com.order.domain.model.ProductItem
+import com.order.domain.model.OrderProduct
 import com.order.domain.model.OrderRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -44,8 +44,8 @@ class OrderController(
         fun toOrderRequest(): OrderRequest {
             return OrderRequest(
                 userId = userId,
-                productItems = orderProducts.map {
-                    ProductItem(
+                orderProducts = orderProducts.map {
+                    OrderProduct(
                         productId = it.productId,
                         amount = it.amount,
                     )

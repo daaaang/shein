@@ -4,7 +4,7 @@ import com.order.domain.usecase.OrderUseCase
 import com.order.domain.events.OrderProductEvent
 import com.order.domain.events.handler.EventHandler
 import com.order.domain.model.Order
-import com.order.domain.model.OrderProduct
+import com.order.domain.model.OrderItems
 import com.order.domain.model.OrderRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -24,17 +24,17 @@ class OrderService(
             order = Order.fromOrderRequest(orderRequest),
         )
 
-        val saveOrderProduct = orderUseCase.saveOrderProduct(
-            orderProducts = OrderProduct(
+        val saveOrderItems = orderUseCase.saveOrderProduct(
+            orderProducts = OrderItems(
                 orderId = savedOrder.id,
-                productItems = orderRequest.productItems,
+                orderProducts = orderRequest.orderProducts,
             )
         )
 
         val orderEvent = OrderProductEvent(
             txId = savedOrder.txId,
             orderId = savedOrder.id,
-            productItems = saveOrderProduct.productItems,
+            orderProducts = saveOrderItems.orderProducts,
         )
 
         coroutineScope.launch {

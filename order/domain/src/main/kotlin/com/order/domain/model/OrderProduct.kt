@@ -1,6 +1,6 @@
 package com.order.domain.model
 
 data class OrderProduct(
-    val orderId: Long,
-    val productItems: List<ProductItem>,
+    val productId: Long,
+    val amount: Long,
 )
