@@ -26,7 +26,7 @@
 
 - 주문 서비스는 유저의 주문 요청을 바탕으로 주문 도메인을 생성하고 저장해요
 
-```
+``` kotlin
     val savedOrder = orderUseCase.saveOrder(
         order = Order.fromOrderRequest(orderRequest),
     )
@@ -41,7 +41,7 @@
 
 - 생성된 주문 정보를 바탕으로 주문 생성 이벤트를 생성해요.
 
-```
+``` kotlin
     val orderEvent = OrderProductEvent(
         txId = savedOrder.txId,
         orderId = savedOrder.id,
@@ -51,7 +51,7 @@
 
 - 이벤트 발행기를 정의하고 주문 생성 - 상품 재고 이벤트를 발행해요.
 
-```
+``` kotlin
     @Component
     class OrderProductEventHandler(
         private val eventPublisher: EventPublisher<EventMessage<OrderProductEvent>>,
@@ -72,7 +72,7 @@
 
 - 주문 생성 관련한 이벤트를 컨슈머를 정의하고 이벤트를 소모해요.
 
-```
+``` kotlin
     @KafkaListener(topics = ["product-to-order-product-stock"], groupId = "saga")
     override fun consumeProductStock(message: EventMessage<ProductOrderBill>) {
 
