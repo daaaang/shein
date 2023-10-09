@@ -1,7 +1,6 @@
 package com.order.adapter.subscribe
 
 import com.order.domain.events.EventMessage
-import com.order.domain.events.OrderKitchenEvent
 import com.order.domain.events.consumer.OrderEventConsumer
 import com.order.domain.events.handler.EventDispatcher
 import com.order.domain.events.publisher.EventStatus
@@ -66,7 +65,11 @@ class KafkaOrderEventConsumer(
                 EventStatus.APPROVED -> {
                     when (kitchenOrder) {
                         is KitchenOrderTicket -> eventDispatcher.dispatch(
-                            TODO("")
+                            orderPaymentUseCase.createPaymentCreditEvent(
+                                txId = kitchenOrder.txId,
+                                orderId = kitchenOrder.orderId,
+                                productPrices = kitchenOrder.productPrices,
+                            )
                         )
                     }
                 }

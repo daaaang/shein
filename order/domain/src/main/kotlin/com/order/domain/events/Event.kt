@@ -1,17 +1,15 @@
 package com.order.domain.events
 
 import com.order.domain.model.OrderProduct
-import com.order.domain.model.KitchenOrderTicket
-import com.order.domain.model.Order
+import com.order.domain.model.Payment
 
 sealed class Event(
     open val txId: String,
 )
 
-data class OrderProductEvent(
+data class OrderUserEvent(
     override val txId: String,
-    val orderId: Long,
-    val orderProducts: List<OrderProduct>,
+    val userId: Long,
 ) : Event(txId = txId)
 
 data class OrderKitchenEvent(
@@ -23,5 +21,5 @@ data class OrderKitchenEvent(
 data class OrderPaymentEvent(
     override val txId: String,
     val orderId: Long,
-
+    val payment: Payment,
 ) : Event(txId = txId)

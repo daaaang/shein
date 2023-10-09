@@ -6,4 +6,5 @@ data class KitchenOrderTicket(
     val txId: String,
     val orderId: Long,
     val kitchenStatus: KitchenStatusType,
-): KitchenOrder()
+    val productPrices: List<ProductPrice>,
+) : KitchenOrder()

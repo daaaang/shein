@@ -13,4 +13,9 @@ class OrderQueryAdapter(
         return orderEntityRepository.findOrderEntityByTxId(txId)
             ?.toDomainModel() ?: throw IllegalArgumentException()
     }
+
+    override fun getOrderByOrderId(orderId: Long): Order {
+        return orderEntityRepository.findById(orderId).orElseThrow { throw IllegalArgumentException() }
+            .toDomainModel()
+    }
 }
