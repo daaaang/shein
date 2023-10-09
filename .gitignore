@@ -17,7 +17,7 @@ bin/
 !**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
-.idea
+saga-pattern/.idea
 *.iws
 *.iml
 *.ipr
