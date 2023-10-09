@@ -1,7 +1,9 @@
 # 사가 패턴 실습
 
 ## 1. 목표 와이어 프레임
+
 ![img_1.png](image%2Fimg_1.png)
+
 - 유저가 주문을 요청에 대한 각 서비스를 사가 패턴으로 구현해요.
 
 ## 2. 이벤트 발행 구조
@@ -12,7 +14,46 @@
 - EventHandler 정의된 EventPublisher로 이벤트를 발행해요.
 - EventConsumer는 메세지를 수신하고, 각 상황에 맞는 이벤트를 발급해요.
 
-## 3.
+## 3. 주문 요청 진행 과정
+
+``` kotlin
+
+    @KafkaListener(topics = ["user-to-order"], groupId = "saga")
+    override fun consumeUserStatus(message: EventMessage<UserStatus>) {
+        coroutineScope.launch {
+
+            when (message) {
+                is EventMessage.SuccessEventMessage<UserStatus> -> {
+                    val userStatus = message.message
+                    when (userStatus.userStatus) {
+                        UserStatusType.NOMAL -> {
+                            eventDispatcher.dispatch(
+                                event = orderKitchenUseCase.createOrderKitchenEvent(txId = message.txId)
+                            )
+                        }
+
+                        UserStatusType.ABNOMAL -> {
+                            orderUseCase.rejectOrder(
+                                txId = message.txId,
+                                orderRejectReason = OrderRejectReason.USER_ABNOMAL.name
+                            )
+                        }
+                    }
+                }
+
+                is EventMessage.FailEventMessage<UserStatus> -> {
+                    orderUseCase.rejectOrder(
+                        txId = message.txId,
+                        orderRejectReason = message.errorMessage
+                    )
+                }
+            }
+        }
+    }
+```
+- EventConsumer에서 이벤트를 수신한 후, 정의한 비즈니스 로직에 따라 주문 요청에 대한 이벤트를 계속 발급하는지, 보상 트랜잭션을 적용하는지 정의하고 호출해요.
+- 수신한 이벤트의 결과에 따라, 정상 유저라면, 주방 티켓 요청 이벤트를 진행하고, 올바르지 않은 경우 주문에 대한 보상 트랜잭션을 수행해요.
+- 보상 트랜잭션은 교환적 업데이트 방식을 적용하였어요.
 
 ## 4. 문제점
 
