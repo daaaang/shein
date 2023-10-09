@@ -1,7 +1,7 @@
 package com.order.application.service
 
 import com.order.domain.usecase.OrderUseCase
-import com.order.domain.events.OrderProductEvent
+import com.order.domain.events.OrderUserEvent
 import com.order.domain.events.handler.EventHandler
 import com.order.domain.model.Order
 import com.order.domain.model.OrderItems
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class OrderService(
-    private val eventHandler: EventHandler<OrderProductEvent>,
+    private val eventHandler: EventHandler<OrderUserEvent>,
     private val orderUseCase: OrderUseCase,
     private val coroutineScope: CoroutineScope,
 ) {
@@ -31,10 +31,9 @@ class OrderService(
             )
         )
 
-        val orderEvent = OrderProductEvent(
+        val orderEvent = OrderUserEvent(
             txId = savedOrder.txId,
-            orderId = savedOrder.id,
-            orderProducts = saveOrderItems.orderProducts,
+            userId = savedOrder.userId,
         )
 
         coroutineScope.launch {

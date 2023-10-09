@@ -6,4 +6,6 @@ import org.springframework.stereotype.Component
 @Component
 interface OrderQueryPort {
     fun getOrderByTxId(txId: String): Order
+
+    fun getOrderByOrderId(orderId: Long): Order
 }
