@@ -1,7 +1,7 @@
 package com.order.adapter.entity
 
 import com.order.domain.model.Order
-import com.order.domain.model.OrderStatus
+import com.order.domain.model.StepStatus
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -19,7 +19,7 @@ data class OrderEntity(
 
     @Column
     @Enumerated(EnumType.STRING)
-    val orderStatus: OrderStatus,
+    val stepStatus: StepStatus,
 
     @Column
     val txId: String,
@@ -32,7 +32,7 @@ data class OrderEntity(
     fun toDomainModel(): Order {
         return Order(
             userId = userId,
-            orderStatus = orderStatus,
+            stepStatus = stepStatus,
             txId = txId,
             id = id,
         )
@@ -42,7 +42,7 @@ data class OrderEntity(
         fun fromDomainModel(order: Order): OrderEntity {
             return OrderEntity(
                 userId = order.userId,
-                orderStatus = order.orderStatus,
+                stepStatus = order.stepStatus,
                 txId = order.txId,
                 id = order.id,
             )

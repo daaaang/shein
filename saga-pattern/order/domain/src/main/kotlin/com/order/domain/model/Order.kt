@@ -4,7 +4,7 @@ import java.util.*
 
 data class Order(
     val userId: Long,
-    val orderStatus: OrderStatus,
+    val stepStatus: StepStatus,
     val txId: String,
     val id: Long = 0L,
 ) {
@@ -12,9 +12,18 @@ data class Order(
         fun fromOrderRequest(orderRequest: OrderRequest): Order {
             return Order(
                 userId = orderRequest.userId,
-                orderStatus = OrderStatus.PENDING,
+                stepStatus = StepStatus.PENDING,
                 txId = UUID.randomUUID().toString(),
             )
         }
+    }
+
+    fun updateOrderStatus(stepStatusToUpdate: StepStatus): Order {
+        return Order(
+            userId = userId,
+            stepStatus = stepStatusToUpdate,
+            txId = txId,
+            id = id,
+        )
     }
 }
