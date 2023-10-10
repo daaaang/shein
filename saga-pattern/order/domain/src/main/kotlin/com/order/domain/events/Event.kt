@@ -1,7 +1,7 @@
 package com.order.domain.events
 
 import com.order.domain.model.kitchen.KitchenTicketCreationType
-import com.order.domain.model.OrderProduct
+import com.order.domain.model.ProductItem
 import com.order.domain.model.payment.Payment
 import com.order.domain.model.ProductPrice
 import com.order.domain.model.kitchen.KitchenTicketStatusType
@@ -30,7 +30,7 @@ data class OrderPaymentCreationPublishEvent(
 data class OrderKitchenCreationPublishEvent(
     override val txId: String,
     val orderId: Long,
-    val orderProducts: List<OrderProduct>,
+    val productItems: List<ProductItem>,
 ) : Event(txId = txId), OrderPublishEvent
 
 data class OrderPaymentStatusPublishEvent(

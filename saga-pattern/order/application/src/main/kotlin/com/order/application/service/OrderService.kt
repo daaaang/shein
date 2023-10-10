@@ -3,12 +3,11 @@ package com.order.application.service
 import com.order.application.port.OrderCommandPort
 import com.order.application.port.OrderProductCommandPort
 import com.order.application.port.OrderQueryPort
-import com.order.domain.events.OrderUserPublishEvent
 import com.order.domain.model.Order
+import com.order.domain.model.OrderProduct
 import com.order.domain.model.OrderRequest
 import com.order.domain.model.StepStatus
 import com.order.domain.usecase.OrderUseCase
-import kotlinx.coroutines.CoroutineScope
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -17,24 +16,27 @@ class OrderService(
     private val orderQueryPort: OrderQueryPort,
     private val orderCommandPort: OrderCommandPort,
     private val orderProductCommandPort: OrderProductCommandPort,
-    private val coroutineScope: CoroutineScope,
-): OrderUseCase {
+) : OrderUseCase {
 
     @Transactional
-    override fun createOrder(orderRequest: OrderRequest) {
+    override fun createOrder(orderRequest: OrderRequest): Order {
 
         val savedOrder = orderCommandPort.saveOrder(
             order = Order.fromOrderRequest(orderRequest),
         )
 
         orderProductCommandPort.saveOrderProducts(
-            orderProducts = orderRequest.orderProducts
+            orderProducts = orderRequest.productItems
+                .map {
+                    OrderProduct(
+                        orderId = savedOrder.id,
+                        productId = it.productId,
+                        amount = it.amount,
+                    )
+                }
         )
 
-        val orderEvent = OrderUserPublishEvent(
-            txId = savedOrder.txId,
-            userId = savedOrder.userId,
-        )
+        return savedOrder
     }
 
     override fun approvalOrder(txId: String) {
@@ -47,6 +49,5 @@ class OrderService(
         val order = orderQueryPort.getOrderByTxId(txId)
         val updatedOrder = order.updateOrderStatus(StepStatus.REJECTED)
         orderCommandPort.saveOrder(updatedOrder)
-        TODO("주문 실패 메세지")
     }
 }
