@@ -2,9 +2,11 @@ package com.order.application.service
 
 import com.order.application.port.OrderProductQueryPort
 import com.order.application.port.OrderQueryPort
-import com.order.domain.events.OrderPaymentEvent
-import com.order.domain.model.Payment
+import com.order.domain.events.OrderPaymentCreationEvent
+import com.order.domain.events.OrderPaymentStatusConsumeEvent
+import com.order.domain.model.payment.Payment
 import com.order.domain.model.ProductPrice
+import com.order.domain.model.payment.PaymentStatusType
 import com.order.domain.usecase.OrderPaymentUseCase
 import org.springframework.stereotype.Component
 
@@ -13,11 +15,7 @@ class OrderPaymentService(
     private val orderQueryPort: OrderQueryPort,
     private val orderProductQueryPort: OrderProductQueryPort,
 ) : OrderPaymentUseCase {
-    override fun createPaymentCreditEvent(
-        txId: String,
-        orderId: Long,
-        productPrices: List<ProductPrice>
-    ): OrderPaymentEvent {
+    override fun createPaymentCreditEvent(txId: String, orderId: Long, productPrices: List<ProductPrice>): OrderPaymentCreationEvent {
 
         val order = orderQueryPort.getOrderByOrderId(orderId)
         val orderProducts = orderProductQueryPort.getOrderProductByOrderId(order.id)
@@ -28,13 +26,23 @@ class OrderPaymentService(
             it.amount * (productPricesMap[it.productId]?.price ?: throw IllegalArgumentException())
         }
 
-        return OrderPaymentEvent(
+        return OrderPaymentCreationEvent(
             txId = txId,
             orderId = order.id,
             payment = Payment(
                 userId = order.userId,
                 totalPrice = totalPrice,
             ),
+        )
+    }
+
+    override fun rejectPaymentCreditEvent(txId: String): OrderPaymentStatusConsumeEvent {
+        val order = orderQueryPort.getOrderByTxId(txId)
+
+        return OrderPaymentStatusConsumeEvent(
+            txId = txId,
+            orderId = order.id,
+            paymentStatus = PaymentStatusType.REJECT,
         )
     }
 }
