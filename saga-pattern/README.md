@@ -1,10 +1,11 @@
-# 사가 패턴 실습
+# 사가 패턴 - 주문 로직 구현
 
 ## 1. 목표 와이어 프레임
 
 ![structure.png](image%2Fstructure.png)
 
 - 유저가 주문을 요청에 대한 각 서비스를 사가 패턴으로 구현해요.
+- 라이브러리 없이 직접 이벤트 발행 / 수신 구조로 사가 패턴을 구현해요.
 
 ## 2. 이벤트 발행 구조
 
@@ -32,16 +33,16 @@
                     is UserStatusConsumeEvent -> orderKitchenTicketCreationHandler.process(event)
                     is OrderKitchenTicketCreationConsumeEvent -> orderPaymentCreationEventHandler.process(event)
                     is OrderPaymentStatusConsumeEvent -> orderKitchenTicketStatusHandler.process(event)
-                    is OrderKitchenStatusConsumeEvent -> orderUseCase.approvalOrder(event.txId)
+                    is OrderKitchenStatusConsumeEvent -> orderStatusEventHandler.process(event)
                 }
             }
 
             is ErrorEventMessage<OrderConsumeEvent> -> {
                 when(clazz) {
-                    UserStatusConsumeEvent::class -> TODO("")
-                    OrderKitchenTicketCreationConsumeEvent::class -> TODO("")
-                    OrderPaymentStatusConsumeEvent::class -> TODO("")
-                    OrderKitchenStatusConsumeEvent::class -> TODO("")
+                    UserStatusConsumeEvent::class -> orderUseCase.rejectOrder(txId = message.txId, orderRejectReason = message.errorMessage)
+                    OrderKitchenTicketCreationConsumeEvent::class -> orderUseCase.rejectOrder(txId = message.txId, orderRejectReason = message.errorMessage)
+                    OrderPaymentStatusConsumeEvent::class -> orderKitchenTicketCreationHandler.reject(message.txId, rejectReason = message.errorMessage)
+                    OrderKitchenStatusConsumeEvent::class -> orderPaymentCreationEventHandler.reject(message.txId, rejectReason = message.errorMessage)
                 }
             }
         }
@@ -51,7 +52,6 @@
 
 
 ``` kotlin
-
     override suspend fun process(event: UserStatusConsumeEvent) {
 
         when (event.userStatus) {
@@ -81,10 +81,71 @@
             }
         )
     }
-
 ```
 - 이벤트 핸들러는 이벤트 메세지를 생성하는 EventMessageCreator에 이벤트를 생성하는 유즈케이스를 람다 인자로 넣어 이벤트를 만들어요.
+
+``` kotlin
+sealed class EventMessage<out T>(
+    open val target: EventTarget,
+    open val txId: String,
+)
+
+data class TargetEventMessage<T>(
+    override val target: EventTarget,
+    override val txId: String,
+    val message: T,
+) : EventMessage<T>(target = target, txId = txId)
+
+data class ErrorEventMessage<T>(
+    override val target: EventTarget,
+    override val txId: String,
+    val errorMessage: String,
+) : EventMessage<T>(target = target, txId = txId)
+
+```
+- 이벤트는 TargetEventMessage(비즈니스적인 목표를 수행하는 메세지), ErrorEventMessage(비즈니스 로직 구현 중 발생한 에러)로 구성되요.
+
+``` kotlin
+    fun createMessage(eventTarget: EventTarget, txId: String, eventAction: () -> Event): EventMessage<Event> {
+        return try {
+            val event = eventAction.invoke()
+
+            TargetEventMessage(
+                target = eventTarget,
+                txId = event.txId,
+                message = event,
+            )
+        } catch (e: Exception) {
+            ErrorEventMessage(
+                target = eventTarget,
+                txId = txId,
+                errorMessage = e.message.toString()
+            )
+        }
+    }
+```
+- 이벤트를 만드는 람다 인자를 받아 invoke()로 호출함으로써 위에 정의한 이벤트 메세지 형태로 구성해요.
+
+``` kotlin
+    override fun publish(eventName: EventPublishName, message: EventMessage<Event>) {
+        kafkaTemplate.send(
+            eventName.topicName,
+            message.toString(),
+        )
+    }
+```
 - EventPublisher로 이벤트를 발행해요.
+
+``` kotlin
+    override suspend fun reject(txId: String, rejectReason: String) {
+        val orderKitchenStatusEvent = updateRejectKitchenStatusEvent(txId)
+
+        eventPublisher.publish(
+            eventName = EventPublishName.ORDER_TO_KITCHEN_STATUS,
+            message = orderKitchenStatusEvent,
+        )
+```
+- 만약 정상 응답을 받았을 떄, 받은 이벤트가 REJECT 상태를 의미하거나, 에러 응답을 받은 경우 이전 단계에 대한 보상 트랜잭션을 진행해요
 
 ## 4. 문제점
 
