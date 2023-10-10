@@ -4,5 +4,7 @@ import org.springframework.stereotype.Component
 
 @Component
 interface EventHandler<T> {
-    suspend fun handle(event: T)
+    suspend fun process(event: T)
+
+    suspend fun reject(txId: String, rejectReason: String)
 }
