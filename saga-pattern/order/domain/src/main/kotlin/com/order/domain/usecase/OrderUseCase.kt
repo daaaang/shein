@@ -1,6 +1,5 @@
 package com.order.domain.usecase
 
-import com.order.domain.model.OrderRejectReason
 import com.order.domain.model.OrderRequest
 import org.springframework.stereotype.Component
 
@@ -8,6 +7,8 @@ import org.springframework.stereotype.Component
 interface OrderUseCase {
 
     fun createOrder(orderRequest: OrderRequest)
+
+    fun approvalOrder(txId: String)
 
     fun rejectOrder(txId: String, orderRejectReason: String)
 }
