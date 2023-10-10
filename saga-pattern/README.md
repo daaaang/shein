@@ -85,22 +85,22 @@
 - 이벤트 핸들러는 이벤트 메세지를 생성하는 EventMessageCreator에 이벤트를 생성하는 유즈케이스를 람다 인자로 넣어 이벤트를 만들어요.
 
 ``` kotlin
-  sealed class EventMessage<out T>(
-      open val target: EventTarget,
-      open val txId: String,
-  )
-  
-  data class TargetEventMessage<T>(
-      override val target: EventTarget,
-      override val txId: String,
-      val message: T,
-  ) : EventMessage<T>(target = target, txId = txId)
-  
-  data class ErrorEventMessage<T>(
-      override val target: EventTarget,
-      override val txId: String,
-      val errorMessage: String,
-  ) : EventMessage<T>(target = target, txId = txId)
+    sealed class EventMessage<out T>(
+        open val target: EventTarget,
+        open val txId: String,
+    )
+    
+    data class TargetEventMessage<T>(
+        override val target: EventTarget,
+        override val txId: String,
+        val message: T,
+    ) : EventMessage<T>(target = target, txId = txId)
+    
+    data class ErrorEventMessage<T>(
+        override val target: EventTarget,
+        override val txId: String,
+        val errorMessage: String,
+    ) : EventMessage<T>(target = target, txId = txId)
 
 ```
 - 이벤트는 TargetEventMessage(비즈니스적인 목표를 수행하는 메세지), ErrorEventMessage(비즈니스 로직 구현 중 발생한 에러)로 구성되요.
