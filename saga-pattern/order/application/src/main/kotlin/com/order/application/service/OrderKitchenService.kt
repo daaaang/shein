@@ -4,6 +4,7 @@ import com.order.application.port.OrderProductQueryPort
 import com.order.application.port.OrderQueryPort
 import com.order.domain.events.OrderKitchenCreationPublishEvent
 import com.order.domain.events.OrderKitchenStatusUpdatePublishEvent
+import com.order.domain.model.ProductItem
 import com.order.domain.model.kitchen.KitchenTicketStatusType
 import com.order.domain.usecase.OrderKitchenUseCase
 import org.springframework.stereotype.Service
@@ -21,7 +22,12 @@ class OrderKitchenService(
         return OrderKitchenCreationPublishEvent(
             txId = txId,
             orderId = order.id,
-            orderProducts = orderProducts,
+            productItems = orderProducts.map {
+                ProductItem(
+                    productId = it.productId,
+                    amount = it.amount,
+                )
+            },
         )
     }
 

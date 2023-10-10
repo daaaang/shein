@@ -1,7 +1,5 @@
 package com.order.adapter.entity
 
-import com.order.application.port.OrderProductQueryPort
-import com.order.domain.model.OrderItems
 import com.order.domain.model.OrderProduct
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -33,6 +31,17 @@ data class OrderProductEntity(
             amount = amount,
             productId = productId,
         )
+    }
+
+    companion object {
+        fun fromDomainModel(orderProduct: OrderProduct): OrderProductEntity {
+            return OrderProductEntity(
+                amount = orderProduct.amount,
+                productId = orderProduct.productId,
+                orderId = orderProduct.orderId,
+                id = orderProduct.id,
+            )
+        }
     }
 
 }

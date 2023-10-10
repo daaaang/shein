@@ -1,4 +1,4 @@
-package com.order.adapter.subscribe
+package com.order.adapter.consumer
 
 import com.order.domain.events.EventMessage
 import com.order.domain.events.OrderKitchenStatusConsumeEvent

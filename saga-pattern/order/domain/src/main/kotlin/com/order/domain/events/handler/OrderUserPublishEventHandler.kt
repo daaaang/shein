@@ -1,31 +1,25 @@
-package com.order.application.service
+package com.order.domain.events.handler
 
 import com.order.domain.events.OrderUserPublishEvent
 import com.order.domain.events.TargetEventMessage
 import com.order.domain.events.publisher.EventPublishName
 import com.order.domain.events.publisher.EventPublisher
 import com.order.domain.events.publisher.EventTarget
-import com.order.domain.share.Logger
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 
-@Service
-class TestService(
+@Component
+class OrderUserPublishEventHandler(
     private val eventPublisher: EventPublisher,
-) {
+) : EventPublishHandler<OrderUserPublishEvent> {
 
-    fun runEvent() {
+    override suspend fun process(event: OrderUserPublishEvent) {
         eventPublisher.publish(
-            eventName = EventPublishName.ORDER_TO_TEST,
+            eventName = EventPublishName.ORDER_TO_USER,
             message = TargetEventMessage(
                 target = EventTarget.ORDER_CREATION,
-                txId = "1234",
-                message = OrderUserPublishEvent(
-                    txId = "1234",
-                    userId = 150L,
-                )
-            )
+                txId = event.txId,
+                message = event,
+            ),
         )
     }
-
-    companion object : Logger()
 }
