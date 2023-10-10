@@ -7,30 +7,39 @@ import com.order.domain.events.OrderKitchenTicketCreationConsumeEvent
 import com.order.domain.events.publisher.EventPublishName
 import com.order.domain.events.publisher.EventPublisher
 import com.order.domain.events.publisher.EventTarget
+import com.order.domain.model.kitchen.KitchenTicketCreationType
+import com.order.domain.usecase.OrderKitchenUseCase
 import com.order.domain.usecase.OrderPaymentUseCase
-import com.order.domain.usecase.OrderUseCase
 import org.springframework.stereotype.Component
 
 @Component
 class OrderPaymentCreationEventHandler(
-    private val orderUseCase: OrderUseCase,
+    private val orderKitchenUseCase: OrderKitchenUseCase,
     private val orderPaymentUseCase: OrderPaymentUseCase,
     private val eventPublisher: EventPublisher,
 ) : EventHandler<OrderKitchenTicketCreationConsumeEvent> {
 
     override suspend fun process(event: OrderKitchenTicketCreationConsumeEvent) {
-        val paymentEventMessage = createPaymentEventMessage(event)
+        when (event.kitchenStatus) {
+            KitchenTicketCreationType.APPROVAL -> {
+                val paymentEventMessage = createPaymentEventMessage(event)
 
-        eventPublisher.publish(
-            eventName = EventPublishName.ORDER_TO_PAYMENT,
-            message = paymentEventMessage,
-        )
+                eventPublisher.publish(
+                    eventName = EventPublishName.ORDER_TO_PAYMENT,
+                    message = paymentEventMessage,
+                )
+            }
+            KitchenTicketCreationType.REJECTED_FULL_WAITING -> {
+                reject(txId = event.txId)
+            }
+        }
     }
 
     override suspend fun reject(txId: String, rejectReason: String) {
-        orderUseCase.rejectOrder(
-            txId = txId,
-            orderRejectReason = rejectReason
+        val kitchenTicketRejectEvent = updateRejectKitchenTicketCreationEventMessage(txId)
+        eventPublisher.publish(
+            eventName = EventPublishName.ORDER_TO_KITCHEN_CREATION,
+            message = kitchenTicketRejectEvent,
         )
     }
 
@@ -44,6 +53,16 @@ class OrderPaymentCreationEventHandler(
                     orderId = event.orderId,
                     productPrices = event.productPrices,
                 )
+            }
+        )
+    }
+
+    private suspend fun updateRejectKitchenTicketCreationEventMessage(txId: String): EventMessage<Event> {
+        return EventMessageCreator.createMessage(
+            eventTarget = EventTarget.ORDER_CREATION,
+            txId = txId,
+            eventAction = {
+                orderKitchenUseCase.rejectOrderKitchenEvent(txId = txId)
             }
         )
     }

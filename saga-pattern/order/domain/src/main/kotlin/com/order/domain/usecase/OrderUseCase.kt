@@ -10,5 +10,5 @@ interface OrderUseCase {
 
     fun approvalOrder(txId: String)
 
-    fun rejectOrder(txId: String, orderRejectReason: String)
+    fun rejectOrder(txId: String, orderRejectReason: String = "")
 }
