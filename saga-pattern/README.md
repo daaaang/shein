@@ -2,63 +2,94 @@
 
 ## 1. 목표 와이어 프레임
 
-![img_1.png](image%2Fimg_1.png)
+![structure.png](image%2Fstructure.png)
 
 - 유저가 주문을 요청에 대한 각 서비스를 사가 패턴으로 구현해요.
 
 ## 2. 이벤트 발행 구조
 
-![img.png](image/img.png)
-
-- 이벤트를 발행하고 각 이벤트의 타입에 따라 Dispathcer가 이벤트 핸들러를 호출해요.
-- EventHandler 정의된 EventPublisher로 이벤트를 발행해요.
-- EventConsumer는 메세지를 수신하고, 각 상황에 맞는 이벤트를 발급해요.
+![img.png](image/event.png)
 
 ## 3. 주문 요청 진행 과정
 
 ``` kotlin
-
-    @KafkaListener(topics = ["user-to-order"], groupId = "saga")
-    override fun consumeUserStatus(message: EventMessage<UserStatus>) {
+    @KafkaListener(topics = ["user-to-order-status"], groupId = "saga")
+    override fun consumeUserStatus(message: EventMessage<UserStatusConsumeEvent>) {
+        val clazz = UserStatusConsumeEvent::class
         coroutineScope.launch {
+            eventConsumeDispatcher.dispatch(message, clazz)
+        }
+    }
+```
+- EventConsumer는 메세지를 수신하고, EventConsumeDispatcher를 호출해요.
 
-            when (message) {
-                is EventMessage.SuccessEventMessage<UserStatus> -> {
-                    val userStatus = message.message
-                    when (userStatus.userStatus) {
-                        UserStatusType.NOMAL -> {
-                            eventDispatcher.dispatch(
-                                event = orderKitchenUseCase.createOrderKitchenEvent(txId = message.txId)
-                            )
-                        }
+``` kotlin
 
-                        UserStatusType.ABNOMAL -> {
-                            orderUseCase.rejectOrder(
-                                txId = message.txId,
-                                orderRejectReason = OrderRejectReason.USER_ABNOMAL.name
-                            )
-                        }
-                    }
+    suspend fun dispatch(message: EventMessage<OrderConsumeEvent>, clazz: KClass<out OrderConsumeEvent>) {
+        when (message) {
+            is TargetEventMessage<OrderConsumeEvent> -> {
+                when(val event = message.message) {
+                    is UserStatusConsumeEvent -> orderKitchenTicketCreationHandler.process(event)
+                    is OrderKitchenTicketCreationConsumeEvent -> orderPaymentCreationEventHandler.process(event)
+                    is OrderPaymentStatusConsumeEvent -> orderKitchenTicketStatusHandler.process(event)
+                    is OrderKitchenStatusConsumeEvent -> orderUseCase.approvalOrder(event.txId)
                 }
+            }
 
-                is EventMessage.FailEventMessage<UserStatus> -> {
-                    orderUseCase.rejectOrder(
-                        txId = message.txId,
-                        orderRejectReason = message.errorMessage
-                    )
+            is ErrorEventMessage<OrderConsumeEvent> -> {
+                when(clazz) {
+                    UserStatusConsumeEvent::class -> TODO("")
+                    OrderKitchenTicketCreationConsumeEvent::class -> TODO("")
+                    OrderPaymentStatusConsumeEvent::class -> TODO("")
+                    OrderKitchenStatusConsumeEvent::class -> TODO("")
                 }
             }
         }
     }
 ```
-- EventConsumer에서 이벤트를 수신한 후, 정의한 비즈니스 로직에 따라 주문 요청에 대한 이벤트를 계속 발급하는지, 보상 트랜잭션을 적용하는지 정의하고 호출해요.
-- 수신한 이벤트의 결과에 따라, 정상 유저라면, 주방 티켓 요청 이벤트를 진행하고, 올바르지 않은 경우 주문에 대한 보상 트랜잭션을 수행해요.
-- 보상 트랜잭션은 교환적 업데이트 방식을 적용하였어요.
+- EventConsumeDispatcher는 수신한 이벤트 결과를 바탕으로 다음 이벤트 핸들러를 호출해요.  
+
+
+``` kotlin
+
+    override suspend fun process(event: UserStatusConsumeEvent) {
+
+        when (event.userStatus) {
+            UserStatusType.NOMAL -> {
+                val orderKitchenTicketEventMessage= createOrderKitchenTicketEvent(txId = event.txId)
+                eventPublisher.publish(
+                    eventName = EventPublishName.ORDER_TO_KITCHEN_CREATION,
+                    message = orderKitchenTicketEventMessage,
+                )
+            }
+
+            UserStatusType.ABNOMAL -> {
+                orderUseCase.rejectOrder(
+                    txId = event.txId,
+                    orderRejectReason = OrderRejectReason.USER_ABNOMAL.name
+                )
+            }
+        }
+    }
+    
+    private suspend fun createOrderKitchenTicketEvent(txId: String): EventMessage<Event> {
+        return EventMessageCreator.createMessage(
+            eventTarget = EventTarget.ORDER_CREATION,
+            txId = txId,
+            eventAction = {
+                orderKitchenUseCase.createOrderKitchenEvent(txId = txId)
+            }
+        )
+    }
+
+```
+- 이벤트 핸들러는 이벤트 메세지를 생성하는 EventMessageCreator에 이벤트를 생성하는 유즈케이스를 람다 인자로 넣어 이벤트를 만들어요.
+- EventPublisher로 이벤트를 발행해요.
 
 ## 4. 문제점
 
-- 이벤트 컨슈머 다시 이벤트를 생성하고 디스패처로 넘기는 구조인데, 컨슈머의 역할이 많고, 복잡해요.
-    - 이벤트 컨슈머가 다시 디스패처로 다음 스탭을 위한 비즈니스 로직을 호출하는 구조인데, 더 좋은 설계가 있는지 고민 중이에요.
+- A 이벤트의 결과를 바탕으로 B 이벤트를 호출하는 결과에서 이벤트간 강한 결합이 발생해요.
+  - 결합도를 줄이는 방법을 고민 중이에요!
 
 ## 5. 실행 (확정 아닙니다!)
 
