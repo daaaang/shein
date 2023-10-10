@@ -7,6 +7,7 @@ import com.order.application.service.TestService
 import com.order.domain.model.OrderProduct
 import com.order.domain.model.OrderRequest
 import com.order.domain.model.ProductItem
+import com.order.domain.share.Logger
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -24,6 +25,7 @@ class OrderController(
 
     @GetMapping("/test")
     fun runTest(): ResponseEntity<Unit> {
+        log.info("/order/test api request")
         testService.runEvent()
 
         return ResponseEntity.ok().build()
@@ -60,4 +62,6 @@ class OrderController(
         @JsonProperty("productId") val productId: Long,
         @JsonProperty("amount") val amount: Long,
     )
+
+    companion object : Logger()
 }
