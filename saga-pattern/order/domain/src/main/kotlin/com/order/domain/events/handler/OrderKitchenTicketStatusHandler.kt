@@ -27,13 +27,18 @@ class OrderKitchenTicketStatusHandler(
                 )
             }
             PaymentStatusType.REJECT -> {
-                TODO("보상 트랜잭션")
+                reject(txId = event.txId)
             }
         }
     }
 
     override suspend fun reject(txId: String, rejectReason: String) {
-        TODO("Not yet implemented")
+        val orderKitchenStatusEvent = updateRejectKitchenStatusEvent(txId)
+
+        eventPublisher.publish(
+            eventName = EventPublishName.ORDER_TO_KITCHEN_STATUS,
+            message = orderKitchenStatusEvent,
+        )
     }
 
 
@@ -43,6 +48,16 @@ class OrderKitchenTicketStatusHandler(
             txId = txId,
             eventAction = {
                 orderKitchenUseCase.approvalOrderKitchenEvent(txId)
+            }
+        )
+    }
+
+    private suspend fun updateRejectKitchenStatusEvent(txId: String): EventMessage<Event> {
+        return EventMessageCreator.createMessage(
+            eventTarget = EventTarget.ORDER_CREATION,
+            txId = txId,
+            eventAction = {
+                orderKitchenUseCase.rejectOrderKitchenEvent(txId)
             }
         )
     }

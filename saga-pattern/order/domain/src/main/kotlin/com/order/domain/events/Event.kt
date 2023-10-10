@@ -16,21 +16,33 @@ sealed class Event(
     open val txId: String,
 )
 
-data class OrderUserEvent(
+data class OrderUserPublishEvent(
     override val txId: String,
     val userId: Long,
 ) : Event(txId = txId), OrderPublishEvent
 
-data class OrderPaymentCreationEvent(
+data class OrderPaymentCreationPublishEvent(
     override val txId: String,
     val orderId: Long,
     val payment: Payment,
 ) : Event(txId = txId), OrderPublishEvent
 
-data class OrderKitchenCreationEvent(
+data class OrderKitchenCreationPublishEvent(
     override val txId: String,
     val orderId: Long,
     val orderProducts: List<OrderProduct>,
+) : Event(txId = txId), OrderPublishEvent
+
+data class OrderPaymentStatusPublishEvent(
+    override val txId: String,
+    val orderId: Long,
+    val paymentStatus: PaymentStatusType,
+) : Event(txId = txId), OrderPublishEvent
+
+data class OrderKitchenStatusUpdatePublishEvent(
+    override val txId: String,
+    val orderId: Long,
+    val kitchenStatus: KitchenTicketStatusType,
 ) : Event(txId = txId), OrderPublishEvent
 
 data class OrderKitchenTicketCreationConsumeEvent(

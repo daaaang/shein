@@ -3,7 +3,7 @@ package com.order.application.service
 import com.order.application.port.OrderCommandPort
 import com.order.application.port.OrderProductCommandPort
 import com.order.application.port.OrderQueryPort
-import com.order.domain.events.OrderUserEvent
+import com.order.domain.events.OrderUserPublishEvent
 import com.order.domain.model.Order
 import com.order.domain.model.OrderRequest
 import com.order.domain.model.StepStatus
@@ -31,7 +31,7 @@ class OrderService(
             orderProducts = orderRequest.orderProducts
         )
 
-        val orderEvent = OrderUserEvent(
+        val orderEvent = OrderUserPublishEvent(
             txId = savedOrder.txId,
             userId = savedOrder.userId,
         )

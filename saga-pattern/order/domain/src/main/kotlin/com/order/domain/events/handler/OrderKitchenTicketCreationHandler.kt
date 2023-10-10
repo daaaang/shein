@@ -31,10 +31,7 @@ class OrderKitchenTicketCreationHandler(
             }
 
             UserStatusType.ABNOMAL -> {
-                orderUseCase.rejectOrder(
-                    txId = event.txId,
-                    orderRejectReason = OrderRejectReason.USER_ABNOMAL.name
-                )
+                reject(txId = event.txId)
             }
         }
     }

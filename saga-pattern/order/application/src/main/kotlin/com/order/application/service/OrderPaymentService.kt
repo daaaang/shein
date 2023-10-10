@@ -2,10 +2,10 @@ package com.order.application.service
 
 import com.order.application.port.OrderProductQueryPort
 import com.order.application.port.OrderQueryPort
-import com.order.domain.events.OrderPaymentCreationEvent
-import com.order.domain.events.OrderPaymentStatusConsumeEvent
-import com.order.domain.model.payment.Payment
+import com.order.domain.events.OrderPaymentCreationPublishEvent
+import com.order.domain.events.OrderPaymentStatusPublishEvent
 import com.order.domain.model.ProductPrice
+import com.order.domain.model.payment.Payment
 import com.order.domain.model.payment.PaymentStatusType
 import com.order.domain.usecase.OrderPaymentUseCase
 import org.springframework.stereotype.Component
@@ -15,7 +15,7 @@ class OrderPaymentService(
     private val orderQueryPort: OrderQueryPort,
     private val orderProductQueryPort: OrderProductQueryPort,
 ) : OrderPaymentUseCase {
-    override fun createPaymentCreditEvent(txId: String, orderId: Long, productPrices: List<ProductPrice>): OrderPaymentCreationEvent {
+    override fun createPaymentCreditEvent(txId: String, orderId: Long, productPrices: List<ProductPrice>): OrderPaymentCreationPublishEvent {
 
         val order = orderQueryPort.getOrderByOrderId(orderId)
         val orderProducts = orderProductQueryPort.getOrderProductByOrderId(order.id)
@@ -26,7 +26,7 @@ class OrderPaymentService(
             it.amount * (productPricesMap[it.productId]?.price ?: throw IllegalArgumentException())
         }
 
-        return OrderPaymentCreationEvent(
+        return OrderPaymentCreationPublishEvent(
             txId = txId,
             orderId = order.id,
             payment = Payment(
@@ -36,10 +36,10 @@ class OrderPaymentService(
         )
     }
 
-    override fun rejectPaymentCreditEvent(txId: String): OrderPaymentStatusConsumeEvent {
+    override fun rejectPaymentCreditEvent(txId: String): OrderPaymentStatusPublishEvent {
         val order = orderQueryPort.getOrderByTxId(txId)
 
-        return OrderPaymentStatusConsumeEvent(
+        return OrderPaymentStatusPublishEvent(
             txId = txId,
             orderId = order.id,
             paymentStatus = PaymentStatusType.REJECT,
