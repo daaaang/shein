@@ -1,5 +1,9 @@
 package com.order.domain.events
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.order.domain.model.kitchen.KitchenTicketCreationType
 import com.order.domain.model.ProductItem
 import com.order.domain.model.payment.Payment
@@ -12,6 +16,18 @@ sealed interface OrderPublishEvent
 
 sealed interface OrderConsumeEvent
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = OrderUserPublishEvent::class, name = "OrderUserPublishEvent"),
+    JsonSubTypes.Type(value = OrderPaymentCreationPublishEvent::class, name = "OrderPaymentCreationPublishEvent"),
+    JsonSubTypes.Type(value = OrderKitchenCreationPublishEvent::class, name = "OrderKitchenCreationPublishEvent"),
+    JsonSubTypes.Type(value = OrderPaymentStatusPublishEvent::class, name = "OrderPaymentStatusPublishEvent"),
+    JsonSubTypes.Type(value = OrderKitchenStatusUpdatePublishEvent::class, name = "OrderKitchenStatusUpdatePublishEvent"),
+    JsonSubTypes.Type(value = OrderKitchenTicketCreationConsumeEvent::class, name = "OrderKitchenTicketCreationConsumeEvent"),
+    JsonSubTypes.Type(value = OrderPaymentStatusConsumeEvent::class, name = "OrderPaymentStatusConsumeEvent"),
+    JsonSubTypes.Type(value = OrderKitchenStatusConsumeEvent::class, name = "OrderKitchenStatusConsumeEvent"),
+    JsonSubTypes.Type(value = UserStatusConsumeEvent::class, name = "UserStatusConsumeEvent"),
+)
 sealed class Event(
     open val txId: String,
 )

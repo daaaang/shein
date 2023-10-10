@@ -4,13 +4,14 @@ import com.order.domain.events.EventMessage
 import com.order.domain.events.OrderKitchenStatusConsumeEvent
 import com.order.domain.events.OrderKitchenTicketCreationConsumeEvent
 import com.order.domain.events.OrderPaymentStatusConsumeEvent
+import com.order.domain.events.OrderUserPublishEvent
 import com.order.domain.events.UserStatusConsumeEvent
 import org.springframework.stereotype.Component
 
 @Component
 interface OrderEventConsumer {
 
-    fun consumeTest(message: EventMessage<String>)
+    fun consumeTest(message: EventMessage<OrderUserPublishEvent>)
 
     fun consumeUserStatus(message: EventMessage<UserStatusConsumeEvent>)
 

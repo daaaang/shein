@@ -14,6 +14,7 @@ class TestService(
 ) {
 
     fun runEvent() {
+        log.info("event publish")
         eventPublisher.publish(
             eventName = EventPublishName.ORDER_TO_TEST,
             message = TargetEventMessage(
