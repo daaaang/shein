@@ -189,13 +189,61 @@
 - 이벤트 컨슈머가 특정 이벤트를 수신한 후, 디스패처를 호출하여 디스패처가 각 이벤트 핸들러를 적절하게 호출하는 방식을 적용했어요.
   - 이벤트 컨슈머는 이벤트를 수신하고 디스패처 호출, 디스패처는 적절한 핸들러에게 위임, 핸들러에서 처리하도록 하여 역할과 책임을 분리하였어요
 
-## 6. 한계
+## 6. 테스트
+- 단위 테스트
+  - 이벤트 발행을 해야하는 로직은 kotest를 활용하여 mockk하여 비즈니스 로직을 검증하였어요.
+``` kotlin
+    class OrderKitchenTicketStatusHandlerTest(
+        private val orderKitchenUseCase: OrderKitchenUseCase = mockk(),
+        private val eventPublisher: EventPublisher = mockk()
+    ) : BehaviorSpec({
+    
+        isolationMode = IsolationMode.InstancePerLeaf
+    
+        val sut = OrderKitchenTicketStatusHandler(
+            orderKitchenUseCase = orderKitchenUseCase,
+            eventPublisher = eventPublisher,
+        )
+    
+        given("각 상황에 대한 mockk 응답이 주어져요") {
+            val txId = "1234"
+            val orderId = 1L
+    
+            coEvery { orderKitchenUseCase.approvalOrderKitchenEvent(any()) } returns OrderKitchenStatusUpdatePublishEvent(
+                txId = txId,
+                orderId = orderId,
+                kitchenStatus = KitchenTicketStatusType.APPROVAL,
+            )
+            
+            // 중략
+        
+            `when`("UserStatusConsumeEvent의 상태가 Normal 일 떄,") {
+    
+                val event = UserStatusConsumeEvent(
+                    txId = txId,
+                    userId = userId,
+                    userStatus = UserStatusType.NOMAL,
+                )
+    
+                sut.process(event)
+    
+                then("주방 티켓 생성 이벤트를 생성하고, 이벤트를 발행해요") {
+                    coVerify(exactly = 1) { orderKitchenUseCase.createOrderKitchenEvent(any()) }
+                    coVerify(exactly = 1) { eventPublisher.publish(any(), any()) }
+                    coVerify(exactly = 0) { orderUseCase.rejectOrder(any(), any()) }
+                }
+            }
+```
+- 통합 테스트
+  - 실제 카프카 발행후 다음 스탭을 수신하는 일련의 과정을 테스트하기 위해 코드를 작성 중이에요!
+
+## 7. 한계
 
 - A 이벤트의 결과를 바탕으로 B 이벤트를 호출하는 결과에서 이벤트간 강한 결합이 발생해요.
   - 결합도를 줄이는 방법을 고민 중이에요!
 
 
-## 7. 도커 및 카프카 실행 
+## 8. 도커 및 카프카 실행 
 ```
     docker compose up --build -d
     
