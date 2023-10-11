@@ -1,0 +1,34 @@
+### 1. 주문 생성 이벤트 발행
+
+# 테스트 실행 과정
+# userId % 3 != 0 -> 유저 NORNAL
+# userId % 3 == 0 -> 유저 ABNORMAL
+
+# productIds not in 1L -> 주방 티켓 생성 PENDING
+# productIds in 1L -> 주방 티켓 생성 REJECT
+
+# userId % 2 == 0 -> 결제 상태 APPROVAL
+# userID % 2 != 0 -> 결제 상태 REJECT
+
+# orderId % 3 == 0 -> 주방 티켓 상태 APPROVAL
+# orderId % 3 != 0 -> 주방 티켓 상태 REJECT
+
+POST {{baseUrl}}/create
+Content-Type: application/json
+Accept: */*
+Connection: keep-alive
+X-Forwarded-For: 127.0.0.1
+
+{
+  "userId": 1,
+  "productItems": [
+    {
+      "productId": 123,
+      "amount": 4
+    },
+    {
+      "productId": 124,
+      "amount": 5
+    }
+  ]
+}
