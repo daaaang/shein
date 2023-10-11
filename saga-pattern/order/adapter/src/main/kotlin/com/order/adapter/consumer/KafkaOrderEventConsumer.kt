@@ -1,7 +1,7 @@
 package com.order.adapter.consumer
 
 import com.order.domain.events.EventMessage
-import com.order.domain.events.OrderKitchenStatusConsumeEvent
+import com.order.domain.events.OrderKitchenTicketStatusConsumeEvent
 import com.order.domain.events.OrderKitchenTicketCreationConsumeEvent
 import com.order.domain.events.OrderPaymentStatusConsumeEvent
 import com.order.domain.events.OrderUserPublishEvent
@@ -28,6 +28,8 @@ class KafkaOrderEventConsumer(
 
     @KafkaListener(topics = ["user-to-order-status"], groupId = "saga")
     override fun consumeUserStatus(@Payload message: EventMessage<UserStatusConsumeEvent>) {
+
+        log.info("message = $message")
         val clazz = UserStatusConsumeEvent::class
         coroutineScope.launch {
             eventConsumeDispatcher.dispatch(message, clazz)
@@ -37,6 +39,7 @@ class KafkaOrderEventConsumer(
     @KafkaListener(topics = ["kitchen-to-order-ticket-creation"], groupId = "saga")
     override fun consumeKitchenTicketCreation(@Payload message: EventMessage<OrderKitchenTicketCreationConsumeEvent>) {
 
+        log.info("message = $message")
         val clazz = OrderKitchenTicketCreationConsumeEvent::class
         coroutineScope.launch {
             eventConsumeDispatcher.dispatch(message, clazz)
@@ -46,6 +49,7 @@ class KafkaOrderEventConsumer(
     @KafkaListener(topics = ["payment-to-order-pay"], groupId = "saga")
     override fun consumePayment(@Payload message: EventMessage<OrderPaymentStatusConsumeEvent>) {
 
+        log.info("message = $message")
         val clazz = OrderPaymentStatusConsumeEvent::class
         coroutineScope.launch {
             eventConsumeDispatcher.dispatch(message, clazz)
@@ -53,14 +57,14 @@ class KafkaOrderEventConsumer(
     }
 
     @KafkaListener(topics = ["kitchen-to-order-ticket-status"], groupId = "saga")
-    override fun consumeKitchenTicketApproval(@Payload message: EventMessage<OrderKitchenStatusConsumeEvent>) {
+    override fun consumeKitchenTicketStatus(@Payload message: EventMessage<OrderKitchenTicketStatusConsumeEvent>) {
 
-        val clazz = OrderKitchenStatusConsumeEvent::class
+        log.info("message = $message")
+        val clazz = OrderKitchenTicketStatusConsumeEvent::class
         coroutineScope.launch {
             eventConsumeDispatcher.dispatch(message, clazz)
         }
     }
-
 
     companion object : Logger()
 }
