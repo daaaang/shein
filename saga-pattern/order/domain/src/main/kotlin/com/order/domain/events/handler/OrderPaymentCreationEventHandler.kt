@@ -21,7 +21,7 @@ class OrderPaymentCreationEventHandler(
 
     override suspend fun process(event: OrderKitchenTicketCreationConsumeEvent) {
         when (event.kitchenStatus) {
-            KitchenTicketCreationType.APPROVAL -> {
+            KitchenTicketCreationType.PENDING -> {
                 val paymentEventMessage = createPaymentEventMessage(event)
 
                 eventPublisher.publish(

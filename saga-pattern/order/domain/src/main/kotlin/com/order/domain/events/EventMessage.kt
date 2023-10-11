@@ -2,12 +2,10 @@ package com.order.domain.events
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.order.domain.events.publisher.EventTarget
 
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "EventMessageType")
 @JsonSubTypes(
     JsonSubTypes.Type(value = TargetEventMessage::class, name = "TargetEventMessage"),
     JsonSubTypes.Type(value = ErrorEventMessage::class, name = "ErrorEventMessage"),

@@ -8,4 +8,5 @@ enum class EventPublishName(
     ORDER_TO_KITCHEN_CREATION("order-to-kitchen-ticket-creation"),
     ORDER_TO_KITCHEN_STATUS("order-to-kitchen-ticket-status"),
     ORDER_TO_PAYMENT("order-to-payment-pay"),
+    ORDER_TO_PAYMENT_STATUS("order-to-payment-pay-status"),
 }

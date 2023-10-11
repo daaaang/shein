@@ -25,6 +25,7 @@ data class OrderEntity(
     val txId: String,
 
     @Id
+    @Column
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
 ) : BaseEntity() {

@@ -9,11 +9,13 @@ import com.order.domain.events.publisher.EventPublisher
 import com.order.domain.events.publisher.EventTarget
 import com.order.domain.model.payment.PaymentStatusType
 import com.order.domain.usecase.OrderKitchenUseCase
+import com.order.domain.usecase.OrderUseCase
 import org.springframework.stereotype.Component
 
 @Component
 class OrderKitchenTicketStatusHandler(
     private val orderKitchenUseCase: OrderKitchenUseCase,
+    private val orderUseCase: OrderUseCase,
     private val eventPublisher: EventPublisher,
 ) : EventHandler<OrderPaymentStatusConsumeEvent> {
     override suspend fun process(event: OrderPaymentStatusConsumeEvent) {
@@ -27,8 +29,13 @@ class OrderKitchenTicketStatusHandler(
                     message = paymentStatusEvent,
                 )
             }
-            PaymentStatusType.REJECT -> {
+            PaymentStatusType.REJECT_DURING_PAYMENT -> {
                 reject(txId = event.txId)
+            }
+
+            /* 주방 APPROVAL 실패로 결제 취소를 한 후 보상 트랜잭션*/
+            PaymentStatusType.REJECT_AFTER_PAYMENT -> {
+                orderUseCase.rejectOrder(txId = event.txId)
             }
         }
     }

@@ -21,12 +21,14 @@ data class OrderProductEntity(
     val orderId: Long,
 
     @Id
+    @Column
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
 ) : BaseEntity() {
 
     fun toDomainModel(): OrderProduct {
         return OrderProduct(
+            id = id,
             orderId = orderId,
             amount = amount,
             productId = productId,

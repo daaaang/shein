@@ -42,7 +42,7 @@ class OrderPaymentService(
         return OrderPaymentStatusPublishEvent(
             txId = txId,
             orderId = order.id,
-            paymentStatus = PaymentStatusType.REJECT,
+            paymentStatus = PaymentStatusType.REJECT_DURING_PAYMENT,
         )
     }
 }
