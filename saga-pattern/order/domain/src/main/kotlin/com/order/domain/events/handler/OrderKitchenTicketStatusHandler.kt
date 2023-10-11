@@ -17,6 +17,7 @@ class OrderKitchenTicketStatusHandler(
     private val eventPublisher: EventPublisher,
 ) : EventHandler<OrderPaymentStatusConsumeEvent> {
     override suspend fun process(event: OrderPaymentStatusConsumeEvent) {
+
         when(event.paymentStatus) {
             PaymentStatusType.APPROVAL -> {
                 val paymentStatusEvent =  updateApprovalKitchenStatusEvent(event.txId)
