@@ -1,6 +1,6 @@
 package com.order.domain.events.handler
 
-import com.order.domain.events.OrderKitchenStatusUpdatePublishEvent
+import com.order.domain.events.OrderKitchenTicketStatusUpdatePublishEvent
 import com.order.domain.events.OrderPaymentStatusConsumeEvent
 import com.order.domain.events.publisher.EventPublisher
 import com.order.domain.model.kitchen.KitchenTicketStatusType
@@ -30,12 +30,12 @@ class OrderKitchenTicketStatusHandlerTest(
         val txId = "1234"
         val orderId = 1L
 
-        coEvery { orderKitchenUseCase.approvalOrderKitchenEvent(any()) } returns OrderKitchenStatusUpdatePublishEvent(
+        coEvery { orderKitchenUseCase.approvalOrderKitchenEvent(any()) } returns OrderKitchenTicketStatusUpdatePublishEvent(
             txId = txId,
             orderId = orderId,
             kitchenStatus = KitchenTicketStatusType.APPROVAL,
         )
-        coEvery { orderKitchenUseCase.rejectOrderKitchenEvent(any()) } returns OrderKitchenStatusUpdatePublishEvent(
+        coEvery { orderKitchenUseCase.rejectOrderKitchenEvent(any()) } returns OrderKitchenTicketStatusUpdatePublishEvent(
             txId = txId,
             orderId = orderId,
             kitchenStatus = KitchenTicketStatusType.REJECT,
@@ -65,7 +65,7 @@ class OrderKitchenTicketStatusHandlerTest(
             val event = OrderPaymentStatusConsumeEvent(
                 txId = txId,
                 orderId = orderId,
-                paymentStatus = PaymentStatusType.REJECT,
+                paymentStatus = PaymentStatusType.REJECT_DURING_PAYMENT,
             )
 
             sut.process(event)

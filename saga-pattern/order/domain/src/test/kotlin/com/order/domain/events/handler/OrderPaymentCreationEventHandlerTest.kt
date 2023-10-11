@@ -1,19 +1,16 @@
 package com.order.domain.events.handler
 
-import com.order.domain.events.OrderKitchenStatusUpdatePublishEvent
+import com.order.domain.events.OrderKitchenTicketStatusUpdatePublishEvent
 import com.order.domain.events.OrderKitchenTicketCreationConsumeEvent
 import com.order.domain.events.OrderPaymentCreationPublishEvent
-import com.order.domain.events.OrderPaymentStatusConsumeEvent
 import com.order.domain.events.publisher.EventPublisher
 import com.order.domain.model.kitchen.KitchenTicketCreationType
 import com.order.domain.model.kitchen.KitchenTicketStatusType
 import com.order.domain.model.payment.Payment
-import com.order.domain.model.payment.PaymentStatusType
 import com.order.domain.usecase.OrderKitchenUseCase
 import com.order.domain.usecase.OrderPaymentUseCase
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
-import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -47,7 +44,7 @@ class OrderPaymentCreationEventHandlerTest(
                 totalPrice = 100.0,
             ),
         )
-        coEvery { orderKitchenUseCase.rejectOrderKitchenEvent(any()) } returns OrderKitchenStatusUpdatePublishEvent(
+        coEvery { orderKitchenUseCase.rejectOrderKitchenEvent(any()) } returns OrderKitchenTicketStatusUpdatePublishEvent(
             txId = txId,
             orderId = orderId,
             kitchenStatus = KitchenTicketStatusType.REJECT,
@@ -60,7 +57,7 @@ class OrderPaymentCreationEventHandlerTest(
             val event = OrderKitchenTicketCreationConsumeEvent(
                 txId = txId,
                 orderId = orderId,
-                kitchenStatus = KitchenTicketCreationType.APPROVAL,
+                kitchenStatus = KitchenTicketCreationType.PENDING,
                 productPrices = listOf(),
             )
 

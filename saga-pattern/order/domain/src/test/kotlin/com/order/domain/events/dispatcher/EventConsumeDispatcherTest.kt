@@ -1,7 +1,7 @@
 package com.order.domain.events.dispatcher
 
 import com.order.domain.events.ErrorEventMessage
-import com.order.domain.events.OrderKitchenStatusConsumeEvent
+import com.order.domain.events.OrderKitchenTicketStatusConsumeEvent
 import com.order.domain.events.OrderKitchenTicketCreationConsumeEvent
 import com.order.domain.events.OrderPaymentStatusConsumeEvent
 import com.order.domain.events.TargetEventMessage
@@ -89,7 +89,7 @@ class EventConsumeDispatcherTest(
             val event = OrderKitchenTicketCreationConsumeEvent(
                 txId = txId,
                 orderId = 1L,
-                kitchenStatus = KitchenTicketCreationType.APPROVAL,
+                kitchenStatus = KitchenTicketCreationType.PENDING,
                 productPrices = listOf()
             )
 
@@ -145,7 +145,7 @@ class EventConsumeDispatcherTest(
         `when`("event가 TargetEventMessage<OrderKitchenStatusConsumeEvent>일 떄,") {
             val txId = "1234"
 
-            val event = OrderKitchenStatusConsumeEvent(
+            val event = OrderKitchenTicketStatusConsumeEvent(
                 txId = txId,
                 orderId = 1L,
                 kitchenStatus = KitchenTicketStatusType.APPROVAL,
@@ -157,7 +157,7 @@ class EventConsumeDispatcherTest(
                 message = event,
             )
 
-            sut.dispatch(message = message, clazz = OrderKitchenStatusConsumeEvent::class)
+            sut.dispatch(message = message, clazz = OrderKitchenTicketStatusConsumeEvent::class)
 
             then("orderKitchenTicketStatusHandler process만 동작을 해야해요.") {
                 coVerify(exactly = 0) { orderKitchenTicketCreationHandler.process(any()) }
@@ -243,13 +243,13 @@ class EventConsumeDispatcherTest(
         `when`("event가 ErrorEventMessage<OrderKitchenStatusConsumeEvent>일 떄,") {
             val txId = "1234"
 
-            val message = ErrorEventMessage<OrderKitchenStatusConsumeEvent>(
+            val message = ErrorEventMessage<OrderKitchenTicketStatusConsumeEvent>(
                 target = EventTarget.ORDER_CREATION,
                 txId = txId,
                 errorMessage = "Error",
             )
 
-            sut.dispatch(message = message, clazz = OrderKitchenStatusConsumeEvent::class)
+            sut.dispatch(message = message, clazz = OrderKitchenTicketStatusConsumeEvent::class)
 
             then("orderKitchenTicketStatusHandler 핸들러만 동작을 해야해요.") {
                 coVerify(exactly = 0) { orderKitchenTicketCreationHandler.process(any()) }
