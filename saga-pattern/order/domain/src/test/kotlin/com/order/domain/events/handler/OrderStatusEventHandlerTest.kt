@@ -1,6 +1,6 @@
 package com.order.domain.events.handler
 
-import com.order.domain.events.OrderKitchenStatusConsumeEvent
+import com.order.domain.events.OrderKitchenTicketStatusConsumeEvent
 import com.order.domain.events.OrderPaymentStatusPublishEvent
 import com.order.domain.events.publisher.EventPublisher
 import com.order.domain.model.kitchen.KitchenTicketStatusType
@@ -38,14 +38,14 @@ class OrderStatusEventHandlerTest(
         coEvery { orderPaymentUseCase.rejectPaymentCreditEvent(any()) } returns OrderPaymentStatusPublishEvent(
             txId = txId,
             orderId = orderId,
-            paymentStatus = PaymentStatusType.REJECT,
+            paymentStatus = PaymentStatusType.REJECT_DURING_PAYMENT,
         )
 
         coEvery { eventPublisher.publish(any(), any()) } just Runs
 
         `when`("OrderKitchenStatusConsumeEvent 상태가 APPROVAL 일 떄,") {
 
-            val event = OrderKitchenStatusConsumeEvent(
+            val event = OrderKitchenTicketStatusConsumeEvent(
                 txId = txId,
                 orderId = orderId,
                 kitchenStatus = KitchenTicketStatusType.APPROVAL,
@@ -62,7 +62,7 @@ class OrderStatusEventHandlerTest(
 
         `when`("OrderKitchenStatusConsumeEvent 상태가 Reject 일 떄,") {
 
-            val event = OrderKitchenStatusConsumeEvent(
+            val event = OrderKitchenTicketStatusConsumeEvent(
                 txId = txId,
                 orderId = orderId,
                 kitchenStatus = KitchenTicketStatusType.REJECT,
