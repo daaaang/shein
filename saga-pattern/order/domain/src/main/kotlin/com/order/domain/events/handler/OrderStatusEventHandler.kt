@@ -3,7 +3,7 @@ package com.order.domain.events.handler
 import com.order.domain.events.Event
 import com.order.domain.events.EventMessage
 import com.order.domain.events.EventMessageCreator
-import com.order.domain.events.OrderKitchenStatusConsumeEvent
+import com.order.domain.events.OrderKitchenTicketStatusConsumeEvent
 import com.order.domain.events.publisher.EventPublishName
 import com.order.domain.events.publisher.EventPublisher
 import com.order.domain.events.publisher.EventTarget
@@ -17,8 +17,8 @@ class OrderStatusEventHandler(
     private val orderUseCase: OrderUseCase,
     private val eventPublisher: EventPublisher,
     private val orderPaymentUseCase: OrderPaymentUseCase,
-) : EventHandler<OrderKitchenStatusConsumeEvent> {
-    override suspend fun process(event: OrderKitchenStatusConsumeEvent) {
+) : EventHandler<OrderKitchenTicketStatusConsumeEvent> {
+    override suspend fun process(event: OrderKitchenTicketStatusConsumeEvent) {
 
         when (event.kitchenStatus) {
             KitchenTicketStatusType.APPROVAL -> orderUseCase.approvalOrder(txId = event.txId)
@@ -33,7 +33,7 @@ class OrderStatusEventHandler(
         val rejectOrderPaymentEvent = rejectOrderPayment(txId = txId)
 
         eventPublisher.publish(
-            eventName = EventPublishName.ORDER_TO_PAYMENT,
+            eventName = EventPublishName.ORDER_TO_PAYMENT_STATUS,
             message = rejectOrderPaymentEvent,
         )
     }

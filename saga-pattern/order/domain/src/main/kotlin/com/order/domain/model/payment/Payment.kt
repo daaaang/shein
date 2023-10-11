@@ -1,6 +1,8 @@
 package com.order.domain.model.payment
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class Payment(
-    val userId: Long,
-    val totalPrice: Double,
+    @JsonProperty("userId") val userId: Long,
+    @JsonProperty("totalPrice") val totalPrice: Double,
 )

@@ -1,7 +1,7 @@
 package com.order.domain.events.consumer
 
 import com.order.domain.events.EventMessage
-import com.order.domain.events.OrderKitchenStatusConsumeEvent
+import com.order.domain.events.OrderKitchenTicketStatusConsumeEvent
 import com.order.domain.events.OrderKitchenTicketCreationConsumeEvent
 import com.order.domain.events.OrderPaymentStatusConsumeEvent
 import com.order.domain.events.OrderUserPublishEvent
@@ -19,5 +19,5 @@ interface OrderEventConsumer {
 
     fun consumePayment(message: EventMessage<OrderPaymentStatusConsumeEvent>)
 
-    fun consumeKitchenTicketApproval(message: EventMessage<OrderKitchenStatusConsumeEvent>)
+    fun consumeKitchenTicketStatus(message: EventMessage<OrderKitchenTicketStatusConsumeEvent>)
 }

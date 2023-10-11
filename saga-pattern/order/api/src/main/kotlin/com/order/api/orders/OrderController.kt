@@ -2,9 +2,7 @@ package com.order.api.orders
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.order.application.service.OrderCreationService
-import com.order.application.service.OrderService
 import com.order.application.service.TestService
-import com.order.domain.model.OrderProduct
 import com.order.domain.model.OrderRequest
 import com.order.domain.model.ProductItem
 import com.order.domain.share.Logger
@@ -43,7 +41,7 @@ class OrderController(
 
     data class OrderApiRequest(
         @JsonProperty("userId") val userId: Long,
-        @JsonProperty("orderProducts") val productItems: List<ProductItemApiRequest>,
+        @JsonProperty("productItems") val productItems: List<ProductItemApiRequest>,
     ) {
         fun toOrderRequest(): OrderRequest {
             return OrderRequest(
