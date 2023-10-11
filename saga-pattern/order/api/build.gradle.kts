@@ -21,6 +21,11 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("com.ninja-squad:springmockk:4.0.2")
+    implementation("com.google.code.gson:gson:2.8.8")
+
+    /* KakKa */
+    implementation("org.springframework.kafka:spring-kafka")
+    implementation("org.apache.kafka:kafka-clients:3.4.0")
 
     implementation(project(":util"))
     implementation(project(":domain"))

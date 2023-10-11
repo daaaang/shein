@@ -23,7 +23,7 @@ dependencies {
     runtimeOnly("com.mysql:mysql-connector-j")
     implementation("mysql:mysql-connector-java:8.0.32")
 
-    /* SAGA */
+    /* KafKa */
     implementation("org.springframework.kafka:spring-kafka")
     implementation("org.apache.kafka:kafka-clients:3.4.0")
 

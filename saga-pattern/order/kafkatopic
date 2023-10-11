@@ -2,12 +2,23 @@ docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:
 docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-kitchen-ticket-creation
 docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-kitchen-ticket-status
 docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-payment-pay
+docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-payment-pay-status
 
 docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic user-to-order-status
 docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic kitchen-to-order-ticket-creation
 docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic payment-to-order-pay
 docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic kitchen-to-order-ticket-status
 
-
 ./kafka-topics --bootstrap-server localhost:9092 --delete --topic order-to-test
 ./kafka-console-consumer --bootstrap-server localhost:9092 --topic order-to-test --from-beginning
+
+./kafka-topics --bootstrap-server localhost:9092 --delete --topic order-to-user-status
+./kafka-topics --bootstrap-server localhost:9092 --delete --topic order-to-kitchen-ticket-creation
+./kafka-topics --bootstrap-server localhost:9092 --delete --topic order-to-kitchen-ticket-status
+./kafka-topics --bootstrap-server localhost:9092 --delete --topic order-to-payment-pay
+./kafka-topics --bootstrap-server localhost:9092 --delete --topic order-to-payment-pay-status
+
+./kafka-topics --bootstrap-server localhost:9092 --delete --topic user-to-order-status
+./kafka-topics --bootstrap-server localhost:9092 --delete --topic kitchen-to-order-ticket-creation
+./kafka-topics --bootstrap-server localhost:9092 --delete --topic payment-to-order-pay
+./kafka-topics --bootstrap-server localhost:9092 --delete --topic kitchen-to-order-ticket-status
