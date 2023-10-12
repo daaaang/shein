@@ -11,6 +11,7 @@
 ## 2. 이벤트 발행 구조
 
 ![img.png](image/event.png)
+  
 
 ## 3. 주문 요청 진행 과정
 
@@ -24,17 +25,18 @@
     }
 ```
 - EventConsumer는 메세지를 수신하고, EventConsumeDispatcher를 호출해요.
+- [KafkaOrderEventConsumer](https://github.com/daaaang/shein/blob/main/saga-pattern/order/adapter/src/main/kotlin/com/order/adapter/consumer/KafkaOrderEventConsumer.kt)
 
 ``` kotlin
-
     suspend fun dispatch(message: EventMessage<OrderConsumeEvent>, clazz: KClass<out OrderConsumeEvent>) {
         when (message) {
             is TargetEventMessage<OrderConsumeEvent> -> {
-                when(val event = message.message) {
+                val event = objectMapper.convertValue(message.message, OrderConsumeEvent::class.java)
+                when(event) {
                     is UserStatusConsumeEvent -> orderKitchenTicketCreationHandler.process(event)
                     is OrderKitchenTicketCreationConsumeEvent -> orderPaymentCreationEventHandler.process(event)
                     is OrderPaymentStatusConsumeEvent -> orderKitchenTicketStatusHandler.process(event)
-                    is OrderKitchenStatusConsumeEvent -> orderStatusEventHandler.process(event)
+                    is OrderKitchenTicketStatusConsumeEvent -> orderStatusEventHandler.process(event)
                 }
             }
 
@@ -43,14 +45,14 @@
                     UserStatusConsumeEvent::class -> orderUseCase.rejectOrder(txId = message.txId, orderRejectReason = message.errorMessage)
                     OrderKitchenTicketCreationConsumeEvent::class -> orderUseCase.rejectOrder(txId = message.txId, orderRejectReason = message.errorMessage)
                     OrderPaymentStatusConsumeEvent::class -> orderKitchenTicketCreationHandler.reject(message.txId, rejectReason = message.errorMessage)
-                    OrderKitchenStatusConsumeEvent::class -> orderPaymentCreationEventHandler.reject(message.txId, rejectReason = message.errorMessage)
+                    OrderKitchenTicketStatusConsumeEvent::class -> orderPaymentCreationEventHandler.reject(message.txId, rejectReason = message.errorMessage)
                 }
             }
         }
     }
 ```
 - EventConsumeDispatcher는 수신한 이벤트 결과를 바탕으로 다음 이벤트 핸들러를 호출해요.  
-
+- [EventConsumeDispatcher](https://github.com/daaaang/shein/blob/main/saga-pattern/order/domain/src/main/kotlin/com/order/domain/events/dispatcher/EventConsumeDispatcher.kt)
 
 ``` kotlin
     override suspend fun process(event: UserStatusConsumeEvent) {
@@ -65,38 +67,21 @@
             }
 
             UserStatusType.ABNOMAL -> {
-                orderUseCase.rejectOrder(
-                    txId = event.txId,
-                    orderRejectReason = OrderRejectReason.USER_ABNOMAL.name
-                )
+                reject(txId = event.txId)
             }
         }
     }
-    
-    private suspend fun createOrderKitchenTicketEvent(txId: String): EventMessage<Event> {
-        return EventMessageCreator.createMessage(
-            eventTarget = EventTarget.ORDER_CREATION,
+
+    override suspend fun reject(txId: String, rejectReason: String) {
+        orderUseCase.rejectOrder(
             txId = txId,
-            eventAction = {
-                orderKitchenUseCase.createOrderKitchenEvent(txId = txId)
-            }
+            orderRejectReason = OrderRejectReason.USER_ABNOMAL.name
         )
     }
 ```
 - 이벤트 핸들러는 이벤트 메세지를 생성하는 EventMessageCreator에 이벤트를 생성하는 유즈케이스를 람다 인자로 넣어 이벤트를 만들어요.
-
+- [OrderKitchenTicketCreationHandler](https://github.com/daaaang/shein/blob/main/saga-pattern/order/domain/src/main/kotlin/com/order/domain/events/handler/OrderKitchenTicketCreationHandler.kt)
 ``` kotlin
-
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-    @JsonSubTypes(
-        JsonSubTypes.Type(value = TargetEventMessage::class, name = "TargetEventMessage"),
-        JsonSubTypes.Type(value = ErrorEventMessage::class, name = "ErrorEventMessage"),
-    )
-    sealed class EventMessage<out T>(
-        open val target: EventTarget,
-        open val txId: String,
-    )
-    
     data class TargetEventMessage<T>(
         override val target: EventTarget,
         override val txId: String,
@@ -111,6 +96,7 @@
 
 ```
 - 이벤트는 TargetEventMessage(비즈니스적인 목표를 수행하는 메세지), ErrorEventMessage(비즈니스 로직 구현 중 발생한 에러)로 구성되요.
+- [EventMessage](https://github.com/daaaang/shein/blob/main/saga-pattern/order/domain/src/main/kotlin/com/order/domain/events/EventMessage.kt)
 
 ``` kotlin
     fun createMessage(eventTarget: EventTarget, txId: String, eventAction: () -> Event): EventMessage<Event> {
@@ -132,7 +118,7 @@
     }
 ```
 - 이벤트를 만드는 람다 인자를 받아 invoke()로 호출함으로써 위에 정의한 이벤트 메세지 형태로 구성해요.
-
+- [EventMessageCreator](https://github.com/daaaang/shein/blob/main/saga-pattern/order/domain/src/main/kotlin/com/order/domain/events/EventMessageCreator.kt)
 ``` kotlin
     override fun publish(eventName: EventPublishName, message: EventMessage<Event>) {
         kafkaTemplate.send(
@@ -142,22 +128,25 @@
     }
 ```
 - EventPublisher로 이벤트를 발행해요.
+- [EventPublisher](https://github.com/daaaang/shein/blob/main/saga-pattern/order/adapter/src/main/kotlin/com/order/adapter/publish/KafkaEventPublisher.kt)
 
 ``` kotlin
-    override suspend fun reject(txId: String, rejectReason: String) {
-        val orderKitchenStatusEvent = updateRejectKitchenStatusEvent(txId)
+    PaymentStatusType.REJECT_DURING_PAYMENT -> {
+        reject(txId = event.txId)
+    }
 
-        eventPublisher.publish(
-            eventName = EventPublishName.ORDER_TO_KITCHEN_STATUS,
-            message = orderKitchenStatusEvent,
-        )
+    /* 주방 APPROVAL 실패로 결제 취소를 한 후 보상 트랜잭션*/
+    PaymentStatusType.REJECT_AFTER_PAYMENT -> {
+        orderUseCase.rejectOrder(txId = event.txId)
+    }
 ```
 - 만약 정상 응답을 받았을 떄, 받은 이벤트가 REJECT 상태를 의미하거나, 에러 응답을 받은 경우 이전 단계에 대한 보상 트랜잭션을 진행해요
+- [OrderKitchenTicketStatusHandler](https://github.com/daaaang/shein/blob/main/saga-pattern/order/domain/src/main/kotlin/com/order/domain/events/handler/OrderKitchenTicketStatusHandler.kt)
 
 ## 5. 발생한 문제 극복 과정 
  
 ``` kotlin
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "EventMessageType")
     @JsonSubTypes(
         JsonSubTypes.Type(value = TargetEventMessage::class, name = "TargetEventMessage"),
         JsonSubTypes.Type(value = ErrorEventMessage::class, name = "ErrorEventMessage"),
@@ -188,10 +177,10 @@
 ```
 - 이벤트 컨슈머가 특정 이벤트를 수신한 후, 디스패처를 호출하여 디스패처가 각 이벤트 핸들러를 적절하게 호출하는 방식을 적용했어요.
   - 이벤트 컨슈머는 이벤트를 수신하고 디스패처 호출, 디스패처는 적절한 핸들러에게 위임, 핸들러에서 처리하도록 하여 역할과 책임을 분리하였어요
+- [EventConsumeDispatcher](https://github.com/daaaang/shein/blob/main/saga-pattern/order/domain/src/main/kotlin/com/order/domain/events/dispatcher/EventConsumeDispatcher.kt)
 
-## 6. 테스트
-- 단위 테스트
-  - 이벤트 발행을 해야하는 로직은 kotest를 활용하여 mockk하여 비즈니스 로직을 검증하였어요.
+## 6. 단위 테스트
+
 ``` kotlin
     class OrderKitchenTicketStatusHandlerTest(
         private val orderKitchenUseCase: OrderKitchenUseCase = mockk(),
@@ -214,47 +203,86 @@
                 orderId = orderId,
                 kitchenStatus = KitchenTicketStatusType.APPROVAL,
             )
-            
-            // 중략
-        
-            `when`("UserStatusConsumeEvent의 상태가 Normal 일 떄,") {
-    
-                val event = UserStatusConsumeEvent(
-                    txId = txId,
-                    userId = userId,
-                    userStatus = UserStatusType.NOMAL,
-                )
-    
-                sut.process(event)
-    
-                then("주방 티켓 생성 이벤트를 생성하고, 이벤트를 발행해요") {
-                    coVerify(exactly = 1) { orderKitchenUseCase.createOrderKitchenEvent(any()) }
-                    coVerify(exactly = 1) { eventPublisher.publish(any(), any()) }
-                    coVerify(exactly = 0) { orderUseCase.rejectOrder(any(), any()) }
-                }
-            }
 ```
-- 통합 테스트
-  - 실제 카프카 발행후 다음 스탭을 수신하는 일련의 과정을 테스트하기 위해 코드를 작성 중이에요!
+- 이벤트 발행을 해야하는 로직은 kotest를 활용하여 mockk하여 비즈니스 로직을 검증하였어요.
+  - [OrderKitchenTicketStatusHandlerTest](https://github.com/daaaang/shein/blob/main/saga-pattern/order/domain/src/test/kotlin/com/order/domain/events/handler/OrderKitchenTicketStatusHandlerTest.kt)
 
-## 7. 한계
+## 7. 통합 테스트
 
+``` kotlin
+    @KafkaListener(topics = ["order-to-payment-pay"], groupId = "saga")
+      fun consumePaymentCreation(@Payload message: EventMessage<OrderPaymentCreationPublishEvent>) {
+          when (message) {
+              is TargetEventMessage -> {
+                  val orderPaymentCreationPublishEvent = objectMapper.convertValue(message.message, OrderPaymentCreationPublishEvent::class.java)
+                  when {
+                      orderPaymentCreationPublishEvent.orderId % 2 == 0L -> {
+                          kafkaTemplate.send(
+                              EventConsumeName.PAYMENT_TO_ORDER_PAY.topicName,
+                              TargetEventMessage(
+                                  target = EventTarget.ORDER_CREATION,
+                                  // 중략
+```
+- 이벤트를 발행했을 떄, 이벤트를 수신하는 곳은 다른 서버에요(유저, 주방, 결제 등)
+- 따라서, 테스트(프로파일) 환경에서는 주문 서버에서 이벤트를 발행했을 떄, 이를 수신할 수 있는 컨슈머를 등록했어요.
+- 이 컨슈머는 이벤트를 수신하고 특정 상황에 APPROVAL, REJECT하여 다시 주문 서버로 이벤트를 발행하도록 했어요.
+- [TestKafkaConsumer](https://github.com/daaaang/shein/blob/main/saga-pattern/order/adapter/src/main/kotlin/com/order/adapter/consumer/TestKafkaConsumer.kt)
+
+
+``` json
+    POST {{baseUrl}}/create
+    Content-Type: application/json
+    Accept: */*
+    Connection: keep-alive
+    X-Forwarded-For: 127.0.0.1
+    
+    {
+      "userId": 1,
+      "productItems": [
+        {
+          "productId": 123,
+          "amount": 4
+        },
+        {
+          "productId": 124,
+          "amount": 5
+        }
+      ]
+    }
+```
+- 인텔리제이 HTTP로 API 요청을 보낸 후 보상 트랜잭션이 이뤄지는 과정을 확인하였어요.
+
+![img.png](image/img-saga-test.png)
+- 각 상황에 따라 토픽이 발행되고 토픽이 역직렬화되어 정의한 EventMessage 타입으로 캐스팅되어 비즈니스 로직이 수행되고 있어요.
+
+![img.png](image/img-saga-db.png)
+- 실제 MySQL의 DB를 확인하여 REJECTED, APPROVAL이 쌓인 것을 확인할 수 있었어요.
+- 주문 -> 유저 확인 이벤트 발급 -> 주방 티켓 생성 이벤트 발급 -> 결제 요청 이벤트 발급 -> 주방 티켓 APPROVAL 요청 이벤트 발급 -> 주문 완료
+  - 이 순서에 맞게 각 요청이 SAGA 패턴으로 구성되어 성공하면 APPROVAL, 중간에 문제가 생기면 REJECTED로 보상 트랜잭션이 잘 처리되었어요.
+
+## 8. 한계
 - A 이벤트의 결과를 바탕으로 B 이벤트를 호출하는 결과에서 이벤트간 강한 결합이 발생해요.
-  - 결합도를 줄이는 방법을 고민 중이에요!
+- 실제 테스트를 위해 카프카를 소비하고 다른 서버의 역할을 하는 이벤트를 발급하는 로직을 작성하였어요
+  - 이를 다른 방법으로 해결할 수 있을지 더 깊게 생각해보고 싶어요!
+- 카프카 직렬화 역직렬화하는 과정에서 MaxIn 방법을 적용하였는데, 이 부분에 대해 더욱 깊게 공부해보고 싶어요.
+- 이벤트를 발행할 떄, 제네릭을 다수 사용하였지만, 유연하게 메세지를 받지 못하여 토픽을 다수 생성하였어요 (생성, 상태를 구분)
+  - 역할과 책임 관점에서 토픽을 나누는 것은 맞다고 생각하였지만, 보다 유연하게 토픽 이름을 설정하여 너무 많은 토픽이 생성되는 것을 줄이는 방법을 고민해보고 싶어요.
 
 
-## 8. 도커 및 카프카 실행 
+## 9. 도커 및 카프카 실행 
 ```
     docker compose up --build -d
     
-    docker exec -it [docker id] kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-user-status
-    docker exec -it [docker id] kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-kitchen-ticket-creation
-    docker exec -it [docker id] kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-kitchen-ticket-status
-    docker exec -it [docker id] kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-payment-pay
+    docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-user-status
+    docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-kitchen-ticket-creation
+    docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-kitchen-ticket-status
+    docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-payment-pay
+    docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic order-to-payment-pay-status
     
-    docker exec -it [docker id] kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic user-to-order-status
-    docker exec -it [docker id] kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic kitchen-to-order-ticket-creation
-    docker exec -it [docker id] kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic payment-to-order-pay
-    docker exec -it [docker id] kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic kitchen-to-order-ticket-status
+    docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic user-to-order-status
+    docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic kitchen-to-order-ticket-creation
+    docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic payment-to-order-pay
+    docker exec -it 9052df9a6f33 kafka-topics --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic kitchen-to-order-ticket-status
+
 ```
 
