@@ -23,6 +23,7 @@
 
 - 순서 보장
     - 이벤트 처리 순서가 보장되면서, 엔티티 간의 유효성 검사나 동시 수정 같은 무수한 복잡성들이 제거됨
+    - 단 동일 파티션!
 - 적어도 한 번 전송 방식
     - 멱등성: 동일한 작업을 여러 번 수행하더라도 결과가 달라지지 않는 것
     - 프로듀서가 재전송을 하더라도 데이터 변화는 일어나지 않음
@@ -74,3 +75,26 @@
 ![img.png](image/kafka-producer-replacation.png)
 
 ![img.png](image/kafkaproducer-replacation-leader-error.png)
+
+## 5. 파티션
+- 하나의 토픽이 한 번에 처리할 수 있는 한꼐를 높이기 위해 토픽 하나를 여러 개로 나눠 병렬 처리가 가능하도록 만든 것
+- 나뉜 파티션 수 만큼 컨슈머를 연결 가능
+- 파티션 수는 초기 생성 후 늘리는 것은 가능 / 줄일 수 없음
+- 파티션 내부에는 N개의 세그먼트가 존재
+  - 세그먼트의 로그 파일에 메세지를 저장
+  - 컨슈머는 세그먼트의 로그 파일에 있는 메세지를 읽음
+
+
+## 6. 프로듀서 및 카프카 브로커 동작
+
+![img.png](image/producer-step1.png)
+
+![img_1.png](image/producer-step2.png)
+
+![img_2.png](image/producer-step3.png)
+
+![img_3.png](image/producer-step4.png)
+
+![img_4.png](image/producer-step5.png)
+
+![img_5.png](image/producer-step6.png)
